@@ -1,3 +1,0 @@
-# One health URL per line. Each must answer HTTP 200 within 20 seconds.
-https://rlwc.org.uk/api/health
-https://theacademyofinfluenceinternational.com/api/health

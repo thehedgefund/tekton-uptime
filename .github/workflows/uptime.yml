@@ -1,6 +1,8 @@
-# TEKTON uptime monitor: every 10 minutes, each URL in sites.txt must answer
-# 200. A failed run makes GitHub email the repository owner (default
-# notification setting: failed workflows). Free and unlimited on a public repo.
+# Checks every TEKTON live site in sites.json every 10 minutes (and on demand).
+# A site that is down gets ONE GitHub issue labelled "down" (GitHub emails the
+# owner), which closes itself when the site is back: one email per outage, not
+# one per run. Free and unlimited on this public repo; keepalive.yml stops
+# GitHub pausing the schedule.
 name: Uptime
 
 on:
@@ -8,24 +10,28 @@ on:
     - cron: "*/10 * * * *"
   workflow_dispatch:
 
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 4
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Make sure the "down" label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh label create down --color B60205 --description "A live site is not answering" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
       - name: Check every site
-        run: |
-          fail=0
-          # Lines saved on Windows end in a carriage return; drop it.
-          grep -v -e '^#' -e '^[[:space:]]*$' sites.txt | tr -d '\r' > /tmp/sites
-          while read -r url; do
-            ok=0
-            for try in 1 2 3; do
-              code=$(curl -s -o /dev/null -m 20 -w "%{http_code}" "$url" || echo 000)
-              if [ "$code" = "200" ]; then ok=1; break; fi
-              sleep 20
-            done
-            if [ $ok = 1 ]; then echo "UP   $url"; else echo "::error::DOWN $url (last status $code)"; fail=1; fi
-          done < /tmp/sites
-          exit $fail
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node check.mjs
