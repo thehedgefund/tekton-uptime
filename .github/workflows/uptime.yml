@@ -18,7 +18,8 @@ jobs:
         run: |
           fail=0
           while read -r url; do
-            url=${url%$''}
+            url=$(printf '%s' "$url" | tr -d '')
+')
             case "$url" in ""|\#*) continue;; esac
             ok=0
             for try in 1 2 3; do
