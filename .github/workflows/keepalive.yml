@@ -1,0 +1,23 @@
+# GitHub switches off scheduled workflows in a public repo after 60 days with
+# no commits. This writes a dated file once a month so the monitor keeps running.
+name: Keep alive
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  touch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          date -u +%Y-%m-%dT%H:%MZ > .keepalive
+          git config user.name "TEKTON uptime"
+          git config user.email "hedgefundthe@gmail.com"
+          git add .keepalive
+          git commit -m "Keep the monitor alive" && git push

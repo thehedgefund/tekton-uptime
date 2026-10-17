@@ -1,0 +1,30 @@
+# TEKTON uptime monitor: every 10 minutes, each URL in sites.txt must answer
+# 200. A failed run makes GitHub email the repository owner (default
+# notification setting: failed workflows). Free and unlimited on a public repo.
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check every site
+        run: |
+          fail=0
+          while read -r url; do
+            case "$url" in ""|\#*) continue;; esac
+            ok=0
+            for try in 1 2 3; do
+              code=$(curl -s -o /dev/null -m 20 -w "%{http_code}" "$url" || echo 000)
+              if [ "$code" = "200" ]; then ok=1; break; fi
+              sleep 20
+            done
+            if [ $ok = 1 ]; then echo "UP   $url"; else echo "::error::DOWN $url (last status $code)"; fail=1; fi
+          done < sites.txt
+          exit $fail
