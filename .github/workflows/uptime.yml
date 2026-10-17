@@ -17,10 +17,9 @@ jobs:
       - name: Check every site
         run: |
           fail=0
+          # Lines saved on Windows end in a carriage return; drop it.
+          grep -v -e '^#' -e '^[[:space:]]*$' sites.txt | tr -d '\r' > /tmp/sites
           while read -r url; do
-            url=$(printf '%s' "$url" | tr -d '')
-')
-            case "$url" in ""|\#*) continue;; esac
             ok=0
             for try in 1 2 3; do
               code=$(curl -s -o /dev/null -m 20 -w "%{http_code}" "$url" || echo 000)
@@ -28,5 +27,5 @@ jobs:
               sleep 20
             done
             if [ $ok = 1 ]; then echo "UP   $url"; else echo "::error::DOWN $url (last status $code)"; fail=1; fi
-          done < sites.txt
+          done < /tmp/sites
           exit $fail
