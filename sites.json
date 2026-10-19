@@ -3,6 +3,7 @@
   { "name": "RLWC (review)", "url": "https://rlwc-review.vercel.app/api/health", "expect": "ok" },
   { "name": "AOII (live)", "url": "https://theacademyofinfluenceinternational.com/api/health", "expect": "ok" },
   { "name": "AOII (review)", "url": "https://aoii-review.vercel.app/api/health", "expect": "ok" },
+  { "name": "Bethel House (review)", "url": "https://bethel-house.vercel.app/api/health", "expect": "ok" },
   { "name": "KEYSTONE", "url": "https://keystone-ten-theta.vercel.app/api/health", "expect": "ok" },
   { "name": "TEKTON studio site", "url": "https://tekton-studio.vercel.app/", "expect": "200" },
   { "name": "African Base", "url": "https://african-base.vercel.app/", "expect": "200" },
