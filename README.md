@@ -18,4 +18,4 @@ Add a line to `sites.json`: `"expect": "ok"` for a build with the kit's `/api/he
 - It runs on GitHub, not on Vercel or Render, so it still works when they are down.
 - genesishq.net itself is behind a Cloudflare bot check that refuses scripts; its Render origin is checked instead.
 
-Run locally: `node check.mjs` (prints the results; opens no issues without `GITHUB_TOKEN`).
+Run locally: `node check.mjs` (prints the results; opens no issues without `GITHUB_TOKEN`). Tests: `node --test` (retry and expect rules in `check.test.mjs`; fetch is stubbed, no network).

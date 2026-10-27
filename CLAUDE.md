@@ -10,7 +10,7 @@ TEKTON's free uptime monitor: a GitHub Actions cron (every 10 minutes) checks ea
 ## Rules
 - Add every new client's `/api/health` to `sites.json` and push with plain git (the gh token lacks `workflow` scope). Author `hedgefundthe@gmail.com`.
 - Public repo: only public website addresses, never an admin or private URL, never a secret.
-- Run locally: `node check.mjs` (prints results; opens no issues without `GITHUB_TOKEN`).
+- Run locally: `node check.mjs` (prints results; opens no issues without `GITHUB_TOKEN`). Tests: `node --test` (no deps, no network).
 
 ## Gotchas
 - GitHub's schedule can run a few minutes late: an outage is noticed within about 15 minutes. For one-minute checks UptimeRobot would need SD's account.

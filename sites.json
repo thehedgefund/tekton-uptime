@@ -7,7 +7,7 @@
   { "name": "KEYSTONE", "url": "https://keystone-ten-theta.vercel.app/api/health", "expect": "ok" },
   { "name": "TEKTON studio site", "url": "https://tekton-studio.vercel.app/", "expect": "200" },
   { "name": "African Base", "url": "https://african-base.vercel.app/", "expect": "200" },
-  { "name": "ARETE", "url": "https://arete-ashen.vercel.app/", "expect": "200" },
+  { "name": "ARETE", "url": "https://arete-ashen.vercel.app/api/health", "expect": "200", "note": "status-only: /api/health answers 200 {status ok, database ok} or 503 when the database is down; a Neon cold start is covered by the 3 tries 20 s apart" },
   { "name": "DEANGELO aide", "url": "https://deangelo-ai.vercel.app/api/health", "expect": "200", "note": "status-only: /api/health answers 200 {status ok} or 503 when the database is down" },
   { "name": "GENESIS (Render API)", "url": "https://genesis-api-il6v.onrender.com/health", "expect": "200", "note": "genesishq.net itself sits behind a Cloudflare bot check, so the Render origin is checked" }
 ]
