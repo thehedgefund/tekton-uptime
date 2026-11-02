@@ -6,7 +6,9 @@
 // A site counts as down only after three failed tries 20 seconds apart, so a
 // single slow answer (or a database waking from cold start) never raises an
 // alarm. "ok" sites must answer 200 with {"ok": true} (the kit's /api/health);
-// "200" sites must answer 200.
+// "db" sites must answer 200 with {"ok": true, "database": "up"} (the kit's
+// /api/health?db=1, which round-trips the database; plain /api/health never
+// touches it); "200" sites must answer 200.
 //
 //   node check.mjs              (prints results; with GITHUB_TOKEN and GITHUB_REPOSITORY, opens and closes issues)
 //   node --test                 (check.test.mjs: retry and expect rules, stubbed, no network)
@@ -23,9 +25,9 @@ async function once(site, fetchImpl) {
     const res = await fetchImpl(site.url, { redirect: "follow", signal: AbortSignal.timeout(25_000), headers: { "user-agent": "tekton-uptime/1 (+github actions)" } });
     const ms = Date.now() - started;
     if (res.status !== 200) return { up: false, why: `HTTP ${res.status}`, ms };
-    if (site.expect === "ok") {
+    if (site.expect === "ok" || site.expect === "db") {
       const body = await res.json().catch(() => null);
-      if (body?.ok !== true) return { up: false, why: `health check answered ${JSON.stringify(body).slice(0, 120)}`, ms };
+      if (body?.ok !== true || (site.expect === "db" && body?.database !== "up")) return { up: false, why: `health check answered ${JSON.stringify(body).slice(0, 120)}`, ms };
     }
     return { up: true, ms };
   } catch (e) {

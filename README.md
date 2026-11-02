@@ -8,7 +8,7 @@ The uptime monitor for every TEKTON live site (BUILD-PLAYBOOK §4.6, COMPLIANCE-
 
 ## Adding a site
 
-Add a line to `sites.json`: `"expect": "ok"` for a build with the kit's `/api/health` (must answer `{"ok": true}`), or `"expect": "200"` for any page that should answer 200. Run it now: Actions › Uptime › Run workflow.
+Add a line to `sites.json`: `"expect": "ok"` for a build with the kit's `/api/health` (must answer `{"ok": true}`), `"expect": "db"` for its deep form `/api/health?db=1` (must answer `{"ok": true, "database": "up"}`: the plain form never touches the database, so only this one alerts on a database outage), or `"expect": "200"` for any page that should answer 200. Give each kit build both a plain and a `?db=1` entry. Run it now: Actions › Uptime › Run workflow.
 
 ## Limits, honestly
 

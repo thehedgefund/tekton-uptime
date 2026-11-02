@@ -3,7 +3,7 @@
 TEKTON's free uptime monitor: a GitHub Actions cron (every 10 minutes) checks each address in `sites.json`. Repo `C:\Users\thede\tekton-uptime`, github.com/thehedgefund/tekton-uptime (PUBLIC on purpose: free Actions minutes). Fleet tier T2. Full picture: `README.md`.
 
 ## Where things are
-- `sites.json`: `{name, url, expect}`; `"expect": "ok"` needs 200 with `{"ok":true}` (the kit's `/api/health`), `"200"` needs 200 only. `check.mjs` does the checks; `.github/workflows/uptime.yml` runs it; `keepalive.yml` commits monthly so GitHub never pauses the schedule (it does after 60 days idle).
+- `sites.json`: `{name, url, expect}`; `"expect": "ok"` needs 200 with `{"ok":true}` (the kit's `/api/health`), `"db"` needs 200 with `{"ok":true,"database":"up"}` (the kit's `/api/health?db=1`; plain `/api/health` never touches the database, so RLWC and AOII have both), `"200"` needs 200 only. `check.mjs` does the checks; `.github/workflows/uptime.yml` runs it; `keepalive.yml` commits monthly so GitHub never pauses the schedule (it does after 60 days idle).
 - Down = three failed tries 20 s apart; opens ONE issue labelled `down` (GitHub emails the owner), which closes itself with the outage length. Closed `down` issues are the outage log. The run itself stays green.
 - Watched (21 Oct 2026; GENESIS API was answering 503 that day): RLWC live and review, AOII live and review, Bethel House review, KEYSTONE, TEKTON studio site, African Base, ARETE, DEANGELO aide, GENESIS Render API (genesishq.net sits behind a Cloudflare bot check, so the Render origin is checked).
 
