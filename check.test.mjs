@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { check } from "./check.mjs";
+import { check, selectSites, syncIssues } from "./check.mjs";
 
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -89,7 +89,7 @@ test('"db": a database outage (503 {ok:false, database:"down"}) is down after th
   const s = stub(() => json(503, { ok: false, database: "down" }));
   const r = await check(deep, s.deps);
   assert.equal(r.up, false);
-  assert.equal(r.why, "HTTP 503");
+  assert.match(r.why, /HTTP 503.*down/);
   assert.equal(s.calls.length, 3);
 });
 
@@ -107,4 +107,56 @@ test("sites.json has a database probe (?db=1, expect db) for RLWC and AOII, live
   }
   for (const s of sites) assert.ok(["ok", "200", "db"].includes(s.expect), `${s.name}: unknown expect ${s.expect}`);
   assert.equal(new Set(sites.map((s) => s.name)).size, sites.length, "site names must be unique (they key the down issues)");
+});
+
+test('"db" fails {ok:true} with no database field', async () => {
+  const r = await check(deep, stub(() => json(200, { ok: true })).deps);
+  assert.equal(r.up, false);
+});
+
+test('"db" fails 200 {ok:false, database:"up"}', async () => {
+  const r = await check(deep, stub(() => json(200, { ok: false, database: "up" })).deps);
+  assert.equal(r.up, false);
+});
+
+const plain = { name: "RLWC (live)", url: "https://rlwc.example/api/health", expect: "ok" };
+const flat = { name: "African Base", url: "https://ab.example/", expect: "200" };
+
+test("--only db keeps only db sites; --skip db keeps the rest; no flag keeps all", () => {
+  const all = [plain, deep, flat];
+  assert.deepEqual(selectSites(all, ["--only", "db"]), [deep]);
+  assert.deepEqual(selectSites(all, ["--skip", "db"]), [plain, flat]);
+  assert.deepEqual(selectSites(all, []), all);
+  assert.throws(() => selectSites(all, ["--only"]), /--only needs/);
+});
+
+// Records every GitHub call; answers with an empty object.
+function ghStub() {
+  const calls = [];
+  return { calls, gh: async (path, init = {}) => (calls.push({ path, method: init.method ?? "GET", body: init.body && JSON.parse(init.body) }), {}) };
+}
+const issue = (number, name) => ({ number, title: `DOWN: ${name}`, created_at: "2026-11-02T05:00:00Z" });
+
+test("a --skip db run never closes or opens a db-site issue", async () => {
+  const open = [issue(7, deep.name)];
+  const { calls, gh } = ghStub();
+  // RLWC plain is up, African Base is down; the db site was not checked in this run.
+  await syncIssues([{ ...plain, up: true, ms: 5 }, { ...flat, up: false, why: "HTTP 500" }], open, gh);
+  assert.ok(!calls.some((c) => c.path.startsWith("/issues/7")), "touched the db-site issue");
+  assert.ok(!calls.some((c) => c.body?.title === `DOWN: ${deep.name}`), "opened a db-site issue");
+  assert.deepEqual(calls.map((c) => c.body?.title).filter(Boolean), ["DOWN: African Base"]);
+});
+
+test("an --only db run never closes or opens a plain-site issue", async () => {
+  const open = [issue(8, plain.name), issue(9, deep.name)];
+  const { calls, gh } = ghStub();
+  await syncIssues([{ ...deep, up: true, ms: 5 }], open, gh);
+  assert.ok(!calls.some((c) => c.path.startsWith("/issues/8")), "touched the plain-site issue");
+  assert.deepEqual(calls.map((c) => `${c.method} ${c.path}`), ["POST /issues/9/comments", "PATCH /issues/9"]);
+});
+
+test("a db site that is down and already has an issue gets no second issue", async () => {
+  const { calls, gh } = ghStub();
+  await syncIssues([{ ...deep, up: false, why: "HTTP 503" }], [issue(9, deep.name)], gh);
+  assert.deepEqual(calls, []);
 });

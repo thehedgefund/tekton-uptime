@@ -8,7 +8,7 @@
     "name": "RLWC (live, database)",
     "url": "https://rlwc.org.uk/api/health?db=1",
     "expect": "db",
-    "note": "database probe: /api/health?db=1 runs SELECT 1 and answers 200 {ok true, database up} or 503 {ok false, database down}; plain /api/health never touches the database"
+    "note": "database probe (?db=1): 503 when the database is down; checked every 30 min by uptime-db.yml"
   },
   {
     "name": "RLWC (review)",
@@ -19,7 +19,7 @@
     "name": "RLWC (review, database)",
     "url": "https://rlwc-review.vercel.app/api/health?db=1",
     "expect": "db",
-    "note": "database probe: /api/health?db=1 runs SELECT 1 and answers 200 {ok true, database up} or 503 {ok false, database down}; plain /api/health never touches the database"
+    "note": "database probe (?db=1): 503 when the database is down; checked every 30 min by uptime-db.yml"
   },
   {
     "name": "AOII (live)",
@@ -30,7 +30,7 @@
     "name": "AOII (live, database)",
     "url": "https://theacademyofinfluenceinternational.com/api/health?db=1",
     "expect": "db",
-    "note": "database probe: /api/health?db=1 runs SELECT 1 and answers 200 {ok true, database up} or 503 {ok false, database down}; plain /api/health never touches the database"
+    "note": "database probe (?db=1): 503 when the database is down; checked every 30 min by uptime-db.yml"
   },
   {
     "name": "AOII (review)",
@@ -41,7 +41,7 @@
     "name": "AOII (review, database)",
     "url": "https://aoii-review.vercel.app/api/health?db=1",
     "expect": "db",
-    "note": "database probe: /api/health?db=1 runs SELECT 1 and answers 200 {ok true, database up} or 503 {ok false, database down}; plain /api/health never touches the database"
+    "note": "database probe (?db=1): 503 when the database is down; checked every 30 min by uptime-db.yml"
   },
   {
     "name": "Bethel House (review)",

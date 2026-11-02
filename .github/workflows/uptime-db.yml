@@ -1,0 +1,38 @@
+# Checks only the database probes in sites.json (expect "db": /api/health?db=1)
+# every 30 minutes (and on demand). Each probe wakes the site's Neon compute, and
+# on Neon's free plan compute hours are capped: the health routes ask for the deep
+# form about every 30 minutes, the plain form (uptime.yml) every 10. Same issue
+# rules as uptime.yml; each run only opens or closes the issues of the sites it
+# checked, so the two workflows never touch each other's issues.
+name: Uptime (databases)
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Make sure the "down" label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh label create down --color B60205 --description "A live site is not answering" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+      - name: Check the database probes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node check.mjs --only db

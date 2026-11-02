@@ -1,4 +1,5 @@
-# Checks every TEKTON live site in sites.json every 10 minutes (and on demand).
+# Checks every TEKTON live site in sites.json every 10 minutes (and on demand),
+# except the database probes (expect "db"), which uptime-db.yml checks every 30.
 # A site that is down gets ONE GitHub issue labelled "down" (GitHub emails the
 # owner), which closes itself when the site is back: one email per outage, not
 # one per run. Free and unlimited on this public repo; keepalive.yml stops
@@ -34,4 +35,4 @@ jobs:
       - name: Check every site
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node check.mjs
+        run: node check.mjs --skip db
