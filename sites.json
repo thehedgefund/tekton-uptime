@@ -85,5 +85,10 @@
     "name": "DEPUTY",
     "url": "https://deputy-iota.vercel.app/api/health",
     "expect": "ok"
+  },
+  {
+    "name": "Kaot Care Planner (review)",
+    "url": "https://kaot-care-review.vercel.app/api/health",
+    "expect": "ok"
   }
 ]
