@@ -90,5 +90,12 @@
     "name": "Kaot Care Planner (review)",
     "url": "https://kaot-care-review.vercel.app/api/health",
     "expect": "ok"
+  },
+  {
+    "name": "AEVIS Care Systems (live)",
+    "url": "https://app.aeviscaresystems.com/api/health",
+    "expect": "ok",
+    "statusPush": "https://app.aeviscaresystems.com/status/push",
+    "statusPushSecretEnv": "AEVIS_STATUS_PUSH_SECRET"
   }
 ]

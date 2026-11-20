@@ -35,4 +35,5 @@ jobs:
       - name: Check every site
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AEVIS_STATUS_PUSH_SECRET: ${{ secrets.AEVIS_STATUS_PUSH_SECRET }}
         run: node check.mjs --skip db

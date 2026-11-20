@@ -30,13 +30,14 @@ async function once(site, fetchImpl) {
     if (res.status !== 200) {
       // For health endpoints the body says what broke (e.g. {"ok":false,"database":"down"}).
       const body = site.expect === "ok" || site.expect === "db" ? await res.text().then((t) => t.trim().slice(0, 120)).catch(() => "") : "";
-      return { up: false, why: `HTTP ${res.status}${body ? ` ${body}` : ""}`, ms };
+      return { up: false, why: `HTTP ${res.status}${body ? ` ${body}` : ""}`, ms, httpStatus: res.status };
     }
     if (site.expect === "ok" || site.expect === "db") {
       const body = await res.json().catch(() => null);
-      if (body?.ok !== true || (site.expect === "db" && body?.database !== "up")) return { up: false, why: `health check answered ${JSON.stringify(body).slice(0, 120)}`, ms };
+      if (body?.ok !== true || (site.expect === "db" && body?.database !== "up")) return { up: false, why: `health check answered ${JSON.stringify(body).slice(0, 120)}`, ms, httpStatus: res.status };
+      return { up: true, ms, httpStatus: res.status, commit: typeof body?.commit === "string" ? body.commit : undefined };
     }
-    return { up: true, ms };
+    return { up: true, ms, httpStatus: res.status };
   } catch (e) {
     return { up: false, why: e?.name === "TimeoutError" ? "no answer within 25 seconds" : String(e?.cause?.code ?? e?.message ?? e), ms: Date.now() - started };
   }
@@ -85,6 +86,29 @@ export async function syncIssues(results, open, gh, now = () => new Date()) {
   }
 }
 
+// Sends each result to a site's own status page, for sites that list `statusPush` (the
+// page's push address) and `statusPushSecretEnv` (the name of the secret holding its
+// Bearer token). A site with no secret set is skipped. A failed push is logged and
+// does not change the run: the issue is still the alarm.
+export async function pushStatus(results, { env = process.env, fetch: fetchImpl = globalThis.fetch, now = () => new Date() } = {}) {
+  const sent = [];
+  for (const r of results) {
+    if (!r.statusPush || !r.statusPushSecretEnv) continue;
+    const secret = env[r.statusPushSecretEnv];
+    if (!secret) { console.log(`  status push skipped for ${r.name}: ${r.statusPushSecretEnv} not set`); continue; }
+    const body = { ok: r.up, httpStatus: r.httpStatus ?? 0, ms: r.ms, checkedAt: now().toISOString(), source: "tekton-uptime", ...(r.commit ? { commit: r.commit } : {}) };
+    try {
+      const res = await fetchImpl(r.statusPush, { method: "POST", signal: AbortSignal.timeout(15_000), headers: { authorization: `Bearer ${secret}`, "content-type": "application/json", "user-agent": "tekton-uptime/1 (+github actions)" }, body: JSON.stringify(body) });
+      console.log(`  status push for ${r.name}: HTTP ${res.status}`);
+      sent.push({ name: r.name, status: res.status });
+    } catch (e) {
+      console.log(`  status push for ${r.name} failed: ${e?.message ?? e}`);
+      sent.push({ name: r.name, status: 0 });
+    }
+  }
+  return sent;
+}
+
 async function main() {
   const sites = selectSites(JSON.parse(readFileSync(new URL("./sites.json", import.meta.url), "utf8")), process.argv.slice(2));
   const results = await Promise.all(sites.map((site) => check(site)));
@@ -101,6 +125,8 @@ async function main() {
     const open = await gh("/issues?state=open&labels=down&per_page=100");
     await syncIssues(results, open, gh);
   }
+
+  await pushStatus(results);
 
   // The run itself stays green: the issues are the alarm, not a red cross on every run.
   const down = results.filter((r) => !r.up).length;
